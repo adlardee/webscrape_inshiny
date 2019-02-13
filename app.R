@@ -67,6 +67,13 @@ combined4 = combined3[combined3$Tag != "",]
 combined4
 #we are ok with some missing tags in combined 4 because we are only looking at tag correlations.
 
+#creating new dataframes so that I can looks at the summary statistics
+combined12 = combined[combined$Tags == 'None',]
+combined13 = combined[combined$Tags != 'None',]
+summary(combined12$Claps)
+summary(combined13$Claps)
+sd(combined12$Claps)
+sd(combined13$Claps)
 
 ###############Word Cloud Setup#################
 text = readLines("wordcloudtags.txt")
@@ -101,7 +108,7 @@ m <- as.matrix(dtm)
 v <- sort(rowSums(m),decreasing=TRUE)
 d <- data.frame(word = names(v),freq=v)
 head(d, 10)
-d2 = head(d, 10)
+d2 = head(d, 15)
 
 set.seed(1234)
 wordcloud(words = d$word, freq = d$freq, min.freq = 1,
@@ -129,6 +136,11 @@ choice = colnames(medium)
 # combined6 = combined4 %>% group_by(Author, Claps, Title) %>%
 #   summarise(., Claps)
 
+combined10 = combined %>%
+  group_by(Category, Date) %>%
+  summarise(., countcat = n())
+head(combined10)
+
 
 
 ##################################################### UI.R #########################################
@@ -151,10 +163,10 @@ ui <- fluidPage(shinyUI(
         menuItem("Traffic", tabName = "traffic", icon = icon("bar-chart")),
         menuItem("Wordcloud", tabName = "wordcloud", icon = icon("bar-chart")),
         menuItem("About", tabName = "about", icon = icon("info"))
-      ),
-      selectizeInput("selected",
-                     "Select Item to Display",
-                     choice)
+      )
+      # selectizeInput("selected",
+      #                "Select Item to Display",
+      #                choice)
     ),
     
     dashboardBody(
@@ -194,6 +206,8 @@ ui <- fluidPage(shinyUI(
                              footer = "For websites it is extremely important to understand what type of content there users like and grow that content over time. For Medium I tracked where the claps(thumbs up) were coming from and tagged them to six different article categorization types (Tech, Startups, Self, Politics, Health, Design). What is interesting in this graphic is the diversity of what users like and also the variability of claps among the categorization types."
                              , width=12)),
                 fluidRow(column(12, plotOutput("plot13"))
+                ),
+                fluidRow(column(12, plotOutput("plot14"))
                 )
         ),
         tabItem(tabName = "wordcloud",
@@ -201,7 +215,9 @@ ui <- fluidPage(shinyUI(
                              footer = "Within Medium you are able to tag keywords to your article to help identify its content. I aggregated all of the keywords used across the articles in my dataset. The graphic on the bottom left gives a count of the top 10 most used keywords in the dataset. On the bottom right you have a word cloud of the most used tags in all articles."
                              , width=12)),
                 fluidRow(column(6, plotOutput("plot11")),
-                         column(6, plotOutput("plot12")))
+                         column(6, plotOutput("plot12"))),
+                fluidRow(column(6, h4("Summary of claps with no tags"), verbatimTextOutput("sum1")),
+                         column(6, h4("Summary of claps with tags"), verbatimTextOutput("sum2")))
         ) #closes tabItem off.
                 )
                 ))))
@@ -262,7 +278,7 @@ server <- function(input, output, session) {
       ggtitle("Boxplot of claps by category") + geom_boxplot() + theme(axis.text.x = element_text(angle = -45, hjust = 0))
   })
   output$plot11<-renderPlot({
-    ggplot(d2, aes(x = word, y = freq, fill = word)) + geom_bar(stat='identity') + coord_flip()
+    ggplot(d2, aes(x = reorder(word, +freq), y = freq, fill = word)) + geom_bar(stat='identity') + coord_flip()
   })  
   output$plot12<-renderPlot({
     wordcloud(words = d$word, freq = d$freq, min.freq = 1,
@@ -274,7 +290,17 @@ server <- function(input, output, session) {
       ggtitle("Traffic of highly regarded articles") + geom_bar(stat = "identity") + 
       theme(axis.text.x = element_text(angle = -90, hjust = 0))
   })
-  
+  output$plot14<-renderPlot({
+    ggplot(combined10, aes(x = Date, y = countcat, colour= Category, fill = Category)) +
+      ggtitle("Velocity of article per day by category") + geom_bar(stat = "identity") + 
+      theme(axis.text.x = element_text(angle = -90, hjust = 0))
+  })
+  output$sum1<-renderPrint({
+    summary(combined12$Claps)
+  })
+  output$sum2<-renderPrint({
+    summary(combined13$Claps)
+  })
   #number of articles(y) by length of time(x)
 }
 shinyApp(ui, server)
