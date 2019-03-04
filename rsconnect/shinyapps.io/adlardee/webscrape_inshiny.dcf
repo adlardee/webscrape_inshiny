@@ -1,0 +1,12 @@
+name: webscrape_inshiny
+title: webscrape_inshiny
+username:
+account: adlardee
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 714246
+bundleId: 1914563
+url: https://adlardee.shinyapps.io/webscrape_inshiny/
+when: 1551718402.08996
+asMultiple: FALSE
+asStatic: FALSE

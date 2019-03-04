@@ -15,6 +15,7 @@ prefs = {'profile.managed_default_content_settings.images':2}
 chromeOptions.add_experimental_option("prefs", prefs)
 driver = webdriver.Chrome(chrome_options=chromeOptions)
 
+#Selecting the start url link
 driver.get("https://medium.com/topic/design")
 time.sleep(25)
 
@@ -43,7 +44,7 @@ while counter<7:
         break
     last_height = new_height
 
-# List of Links
+# List of Links (different xpaths for different article categories)
 #links = list(map(lambda x: x.get_attribute("href"), driver.find_elements_by_xpath('.//h3[@class="ai y cl at cm au ed fp fq d an ef cr"]/a'))) #tech
 #links = list(map(lambda x: x.get_attribute("href"), driver.find_elements_by_xpath('.//h3[@class="ai y cl at cm au ed fl fm d an ef cr"]/a'))) #self
 #links = list(map(lambda x: x.get_attribute("href"), driver.find_elements_by_xpath('.//h3[@class="ai y cl at cm au ed fl fm d an ef cr"]/a'))) #health
@@ -52,7 +53,8 @@ while counter<7:
 links = list(map(lambda x: x.get_attribute("href"), driver.find_elements_by_xpath('.//h3[@class="ai y cl at cm au ed fp fq d an ef cr"]/a'))) ###design
 
 
-
+#Looping through xpaths on the page to pull article title, author name, date of article, length (time it takes to read), number of claps,
+#tags associated with the article. Additional excepts to handle changing xpaths as well as missing data.
 print(links)
 # Passing links into lst
 lst = links
@@ -135,11 +137,7 @@ for i in range(len(lst)):
         writer.writerow(i_dict.values())
 
 
-
-#<span class="u-relative u-background js-actionMultirecommendCount u-marginLeft16"><button class="button button--chromeless u-baseColor--buttonNormal js-multirecommendCountButton u-textColorDarker" data-action="show-recommends" data-action-value="41ae2749fff8">1 clap</button><span class="u-xs-hide"><div class="postMetaInline">Applause from you</div></span></span>
-#<button class="button button--chromeless u-baseColor--buttonNormal js-multirecommendCountButton" data-action="show-recommends" data-action-value="41ae2749fff8">1 clap</button>
-
-#response.xpath('.//button[@class="button button--chromeless u-baseColor--buttonNormal js-multirecommendCountButton"]')
+#printing out attributes to see how the data gathering is going.
     print(title)
     print(author)
     print(date)
@@ -148,12 +146,5 @@ for i in range(len(lst)):
     print(tags)
 
 
-#//*[@id="_obv.shell._surface_1549569044233"]/div/main/article/div/section/div[2]/div/div/div[2]/div[2]/time
-#<time datetime="2019-02-07T13:58:48.983Z">Feb 7</time>
-
 csv_file.close()
 driver.close()
-
-#way to handle the tags
-#I expand the tag list to multiple columns
-#then you meld them into one

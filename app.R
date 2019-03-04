@@ -1,6 +1,7 @@
 ############################################# GLOBAL FILE BELOW ####################################
 
-setwd("C:/Users/adlar/Desktop/webscrape_inshiny")
+#Loading Libraries
+#setwd("C:/Users/adlar/Desktop/webscrape_inshiny")
 library(shinydashboard)
 library(shiny)
 library(dplyr)
@@ -13,61 +14,61 @@ library(corrplot)
 library(ggcorrplot)
 library(tidyr)
 library(tidyverse)
-library("tm")
-library("SnowballC")
-library("wordcloud")
-library("RColorBrewer")
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
 library(memoise)
 
-#install.packages("tm")  # for text mining
-#install.packages("SnowballC") # for text stemming
-#install.packages("wordcloud") # word-cloud generator 
-#install.packages("RColorBrewer") # color palettes
-
+#New packages installed during the project
+# install.packages("tm")  # for text mining
+# install.packages("SnowballC") # for text stemming
+# install.packages("wordcloud") # word-cloud generator 
+# install.packages("RColorBrewer") # color palettes
+# install.packages("tidyverse") #melding a dataframe
 
 ##MEDIUM DATASET##
 #loading medium dataset
 medium = read.csv(file = "mediumfinal.csv")
 medium
 head(medium)
+
 #removing nonclean date column
 medium$Date = NULL
-head(medium)
+
 #renaming of date.fixed column
 colnames(medium)[colnames(medium)=="Date.Fixed"] = "Date"
 head(medium)
+
 
 ##TAGS DATASET##
 #loading tags dataset
 tags = read.csv(file = "tags.csv")
 head(tags)
 
-##COMBINED MEDIUM AND TAGS##
-#combine of tags and medium dataset
+##combining medium and tags dataset##
 combined = cbind(medium, tags)
 head(combined)
 
-str(combined)
-
-#install.packages("tidyverse")
 #gather in tidyverse to melt the dataframe
 combined2 = gather(combined, Drop, Tag, X0:X7)
 combined2
 
-#dropping these two columns
+#dropping X and Drop column
 combined2$Drop = NULL
 combined2$X = NULL
 
-?gather
-
-
-combined3 = na.omit(combined2, cols="Tags", )
-#removes an empty cells
-combined4 = combined3[combined3$Tag != "",]
+#removes empty 'Tag' Cells to make the data smaller
+combined4 = combined2[combined2$Tag != "",]
 combined4
-#we are ok with some missing tags in combined 4 because we are only looking at tag correlations.
 
-#creating new dataframes so that I can looks at the summary statistics
+#creating new dataframe for plot 14
+combined10 = combined %>%
+  group_by(Category, Date) %>%
+  summarise(., countcat = n())
+head(combined10)
+
+#creating new dataframes to look at the summary statistics
 combined12 = combined[combined$Tags == 'None',]
 combined13 = combined[combined$Tags != 'None',]
 summary(combined12$Claps)
@@ -75,7 +76,7 @@ summary(combined13$Claps)
 sd(combined12$Claps)
 sd(combined13$Claps)
 
-###############Word Cloud Setup#################
+############### Word Cloud Setup Begin #################
 text = readLines("wordcloudtags.txt")
 text
 docs = Corpus(VectorSource(text))
@@ -115,32 +116,7 @@ wordcloud(words = d$word, freq = d$freq, min.freq = 1,
           max.words=200, random.order=FALSE, rot.per=0.35, 
           colors=brewer.pal(8, "Dark2"))
 
-##################word cloud setup######################
-
-#happiness = read.csv(file = "happiness2017.csv")
-
-#create variable with colnames as choice this is just removing the country name
-#choice = colnames(happiness)[-1]
-#head(choice)
-
-choice = colnames(medium)
-
-#this is used for the correlation plot (plot 6)
-#happiness5 = select(happiness, 'Happiness.Score', 'Economy..GDP.per.Capita.','Family', 'Health..Life.Expectancy.', 'Freedom', 'Generosity', 'Trust..Government.Corruption.', 'Dystopia.Residual')
-
-# category and tag
-# 
-# combined6 = combined4 %>% group_by(Category, Tag) %>%
-#   summarise(., top10)
-# 
-# combined6 = combined4 %>% group_by(Author, Claps, Title) %>%
-#   summarise(., Claps)
-
-combined10 = combined %>%
-  group_by(Category, Date) %>%
-  summarise(., countcat = n())
-head(combined10)
-
+################## Word Cloud Setup End ######################
 
 
 ##################################################### UI.R #########################################
@@ -228,38 +204,12 @@ ui <- fluidPage(shinyUI(
 
 server <- function(input, output, session) {
   
-  
-  
   #Data output on Data tab
   output$table <- DT::renderDataTable({
     datatable(medium, rownames=FALSE) %>% 
       formatStyle(input$selected,  
                   background="skyblue", fontWeight='bold')
     # Highlight selected column using formatStyle
-  })
-  output$plot1<-renderPlot({
-    ggplot(happiness, aes(x = Happiness.Score, y = Economy..GDP.per.Capita., colour= Region)) + 
-      ggtitle("Scatterplot of Happiness vs Economy by regions") + geom_point(size = 4)
-  })
-  output$plot2<-renderPlot({
-    ggplot(happiness, aes(x = Happiness.Score, y = Health..Life.Expectancy., colour= Region)) + 
-      ggtitle("Scatterplot of Happiness vs Health / Life Expectancy by regions") + geom_point(size = 4)
-  })
-  output$plot3<-renderPlot({
-    ggplot(happiness, aes(x = Happiness.Score, y = Freedom, colour= Region)) + 
-      ggtitle("Scatterplot of Happiness vs Freedom by regions") + geom_point(size = 4)
-  })
-  output$plot4<-renderPlot({
-    ggplot(happiness, aes(x = Happiness.Score, y = Generosity, colour= Region)) + 
-      ggtitle("Scatterplot of Happiness vs Generosity by regions") + geom_point(size = 4)
-  })
-  output$plot5<-renderPlot({
-    ggplot(happiness, aes(x = Region, y = Happiness.Score, colour= Region, srt = 45)) + 
-      ggtitle("Boxplot of Happiness Score by regions") + geom_boxplot() + theme(axis.text.x = element_text(angle = -45, hjust = 0))
-  })
-  output$plot6<-renderPlot({
-    corr = round(cor(happiness5), 1)
-    ggcorrplot(corr, method = "circle") + ggtitle("Correlation graph among variables")
   })
   output$plot7<-renderPlot({
     ggplot(combined, aes(x = Article_length, y = Claps, colour= Category)) + 
@@ -301,6 +251,5 @@ server <- function(input, output, session) {
   output$sum2<-renderPrint({
     summary(combined13$Claps)
   })
-  #number of articles(y) by length of time(x)
 }
 shinyApp(ui, server)
